@@ -67,7 +67,11 @@ export default class Carousel extends Component {
         useScrollView: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
         vertical: PropTypes.bool,
         onBeforeSnapToItem: PropTypes.func,
-        onSnapToItem: PropTypes.func
+        onSnapToItem: PropTypes.func,
+        //支持右侧对齐
+        dataSize: PropTypes.number,
+        itemSpace: PropTypes.number,
+        tailAlignment:PropTypes.bool,
     };
 
     static defaultProps = {
@@ -99,7 +103,10 @@ export default class Carousel extends Component {
         shouldOptimizeUpdates: true,
         swipeThreshold: 20,
         useScrollView: !AnimatedFlatList,
-        vertical: false
+        vertical: false,
+        dataSize: 0,
+        itemSpace: 0,
+        tailAlignment:false,
     }
 
     constructor (props) {
@@ -572,7 +579,7 @@ export default class Carousel extends Component {
     }
 
     _initPositionsAndInterpolators (props = this.props) {
-        const { data, itemWidth, itemHeight, scrollInterpolator, vertical } = props;
+        const { data, itemWidth, itemHeight, scrollInterpolator, vertical,dataSize,tailAlignment,itemSpace} = props;
         const sizeRef = vertical ? itemHeight : itemWidth;
 
         if (!data || !data.length) {
@@ -581,14 +588,21 @@ export default class Carousel extends Component {
 
         let interpolators = [];
         this._positions = [];
-
+        let start = 0;
+        let end = 0;
         this._getCustomData(props).forEach((itemData, index) => {
+            console.log('_initPositionsAndInterpolators  ',index)
             const _index = this._getCustomIndex(index, props);
             let animatedValue;
-
+            start = index * sizeRef;
+            end = index * sizeRef + sizeRef
+            if(index === (dataSize-1) && tailAlignment){
+                end = end - itemSpace;
+                start = start - itemSpace
+            }
             this._positions[index] = {
-                start: index * sizeRef,
-                end: index * sizeRef + sizeRef
+                start,
+                end
             };
 
             if (!this._shouldAnimateSlides(props)) {
@@ -1205,7 +1219,8 @@ export default class Carousel extends Component {
             sliderHeight,
             sliderWidth,
             slideStyle,
-            vertical
+            vertical,
+            data
         } = this.props;
 
         const animatedValue = interpolators && interpolators[index];
@@ -1227,8 +1242,7 @@ export default class Carousel extends Component {
             itemWidth,
             itemHeight
         } : undefined;
-
-        const mainDimension = vertical ? { height: itemHeight } : { width: itemWidth };
+        const mainDimension = vertical ? { height: itemHeight } : {};
         const specificProps = this._needsScrollView() ? {
             key: keyExtractor ? keyExtractor(item, index) : this._getKeyExtractor(item, index)
         } : {};
@@ -1360,7 +1374,7 @@ export default class Carousel extends Component {
             <ScrollViewComponent {...props}>
                 {
                     this._getCustomData().map((item, index) => {
-                        return this._renderItem({ item, index });
+                        return this._renderItem({ item, index }); 
                     })
                 }
             </ScrollViewComponent>
