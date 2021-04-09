@@ -590,6 +590,7 @@ export default class Carousel extends Component {
         let start = 0;
         let end = 0;
         let arr = this._getCustomData(props);
+        let step = pageWitdth+itemSpace;
         arr.forEach((itemData, index) => {
             console.log('_initPositionsAndInterpolators  ',index)
             const _index = this._getCustomIndex(index, props);
@@ -597,11 +598,11 @@ export default class Carousel extends Component {
             start = index * sizeRef;
             end = index * sizeRef + sizeRef
             if(tailAligment){
-                start = index*pageWitdth+index*itemSpace;
+                start = index*step;
                 if(index == (arr.length-1)){
-                    start -= (width-pageWitdth-2*itemSpace);
+                    start -= width-pageWitdth-2*itemSpace
                 }
-                end = start+ pageWitdth
+                end = start+step;
             }
             this._positions[index] = {
                 start,
