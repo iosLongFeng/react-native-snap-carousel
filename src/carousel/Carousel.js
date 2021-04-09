@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Animated, Easing, FlatList, I18nManager, Platform, ScrollView, View, ViewPropTypes } from 'react-native';
+import { Animated, Easing, FlatList, I18nManager, Platform, ScrollView, View, ViewPropTypes, Dimensions} from 'react-native';
 import PropTypes from 'prop-types';
 import shallowCompare from 'react-addons-shallow-compare';
 import {
@@ -24,7 +24,7 @@ const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 // NOTE: the following variable is not declared in the constructor
 // otherwise it is undefined at init, which messes with custom indexes
 const IS_RTL = I18nManager.isRTL;
-
+const {width} = Dimensions.get('screen')
 export default class Carousel extends Component {
 
     static propTypes = {
@@ -68,10 +68,9 @@ export default class Carousel extends Component {
         vertical: PropTypes.bool,
         onBeforeSnapToItem: PropTypes.func,
         onSnapToItem: PropTypes.func,
-        //支持右侧对齐
-        dataSize: PropTypes.number,
-        itemSpace: PropTypes.number,
-        tailAlignment:PropTypes.bool,
+        tailAligment:PropTypes.bool,
+        pageWitdth:PropTypes.number,
+        itemSpace:PropTypes.number,
     };
 
     static defaultProps = {
@@ -104,9 +103,9 @@ export default class Carousel extends Component {
         swipeThreshold: 20,
         useScrollView: !AnimatedFlatList,
         vertical: false,
-        dataSize: 0,
-        itemSpace: 0,
-        tailAlignment:false,
+        tailAligment:false,
+        pageWitdth:0,
+        itemSpace:0
     }
 
     constructor (props) {
@@ -579,7 +578,7 @@ export default class Carousel extends Component {
     }
 
     _initPositionsAndInterpolators (props = this.props) {
-        const { data, itemWidth, itemHeight, scrollInterpolator, vertical,dataSize,tailAlignment,itemSpace} = props;
+        const { data, itemWidth, itemHeight, scrollInterpolator, vertical,pageWitdth,itemSpace,tailAligment} = props;
         const sizeRef = vertical ? itemHeight : itemWidth;
 
         if (!data || !data.length) {
@@ -590,15 +589,19 @@ export default class Carousel extends Component {
         this._positions = [];
         let start = 0;
         let end = 0;
-        this._getCustomData(props).forEach((itemData, index) => {
+        let arr = this._getCustomData(props);
+        arr.forEach((itemData, index) => {
             console.log('_initPositionsAndInterpolators  ',index)
             const _index = this._getCustomIndex(index, props);
             let animatedValue;
             start = index * sizeRef;
             end = index * sizeRef + sizeRef
-            if(index === (dataSize-1) && tailAlignment){
-                end = end - itemSpace;
-                start = start - itemSpace
+            if(tailAligment){
+                start = index*pageWitdth+index*itemSpace;
+                if(index == (arr.length-1)){
+                    start -= (width-pageWitdth-2*itemSpace);
+                }
+                end = start+ pageWitdth
             }
             this._positions[index] = {
                 start,
@@ -1220,7 +1223,7 @@ export default class Carousel extends Component {
             sliderWidth,
             slideStyle,
             vertical,
-            data
+            tailAligment
         } = this.props;
 
         const animatedValue = interpolators && interpolators[index];
@@ -1242,7 +1245,7 @@ export default class Carousel extends Component {
             itemWidth,
             itemHeight
         } : undefined;
-        const mainDimension = vertical ? { height: itemHeight } : {};
+        const mainDimension = vertical ? { height: itemHeight } : tailAligment?{}:{width:itemWidth};
         const specificProps = this._needsScrollView() ? {
             key: keyExtractor ? keyExtractor(item, index) : this._getKeyExtractor(item, index)
         } : {};
